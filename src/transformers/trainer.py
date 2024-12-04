@@ -3894,9 +3894,19 @@ class Trainer:
                 state_dict = self.model.state_dict()
 
             if isinstance(self.accelerator.unwrap_model(self.model), supported_classes):
-                self.accelerator.unwrap_model(self.model).save_pretrained(
-                    output_dir, state_dict=state_dict, safe_serialization=self.args.save_safetensors
-                )
+                if hasattr(self.args, "path_initial_model_for_weight_conversion") and self.args.path_initial_model_for_weight_conversion:
+                    self.accelerator.unwrap_model(self.model).save_pretrained(
+                        output_dir, 
+                        state_dict=state_dict, 
+                        safe_serialization=self.args.save_safetensors,
+                        path_initial_model_for_weight_conversion=self.args.path_initial_model_for_weight_conversion
+                    )
+                else:
+                    self.accelerator.unwrap_model(self.model).save_pretrained(
+                        output_dir,
+                        state_dict=state_dict,
+                        safe_serialization=self.args.save_safetensors
+                    )
             else:
                 logger.info("Trainer.model is not a `PreTrainedModel`, only saving its state dict.")
                 if self.args.save_safetensors:
@@ -3906,9 +3916,20 @@ class Trainer:
                 else:
                     torch.save(state_dict, os.path.join(output_dir, WEIGHTS_NAME))
         else:
-            self.model.save_pretrained(
-                output_dir, state_dict=state_dict, safe_serialization=self.args.save_safetensors
-            )
+            # Добавляем проверку на наличие path_initial_lora в аргументах
+            if hasattr(self.args, "path_initial_lora") and self.args.path_initial_lora:
+                self.model.save_pretrained(
+                    output_dir, 
+                    state_dict=state_dict, 
+                    safe_serialization=self.args.save_safetensors,
+                    path_initial_model_for_weight_conversion=self.args.path_initial_lora
+                )
+            else:
+                self.model.save_pretrained(
+                    output_dir,
+                    state_dict=state_dict,
+                    safe_serialization=self.args.save_safetensors
+                )
 
         if self.processing_class is not None:
             self.processing_class.save_pretrained(output_dir)

@@ -526,7 +526,7 @@ class TrainingArguments:
                       gradient
                         computation.
                     - `"backward_post"` : This prefetches the next set of parameters after the current set of
-                      parameter’s
+                      parameter's
                         gradient computation.
                 - forward_prefetch (`bool`, *optional*, defaults to `False`)
                     FSDP's forward prefetch mode (useful only when `fsdp` field is passed).
@@ -810,6 +810,12 @@ class TrainingArguments:
             Whether enable [Liger](https://github.com/linkedin/Liger-Kernel) Kernel for LLM model training.
             It can effectively increase multi-GPU training throughput by ~20% and reduces memory usage by ~60%, works out of the box with
             flash attention, PyTorch FSDP, and Microsoft DeepSpeed. Currently, it supports llama, mistral, mixtral and gemma models.
+        path_initial_model_for_weight_conversion: Optional[str] = field(
+            default=None,
+            metadata={
+                "help": "Path to initial model weights for PISSA/OLoRA weight conversion during checkpointing. Used to convert PISSA/OLoRA weights to standard LoRA format."
+            }
+        )
     """
 
     framework = "pt"
@@ -1030,7 +1036,7 @@ class TrainingArguments:
     use_cpu: bool = field(
         default=False,
         metadata={
-            "help": "Whether or not to use cpu. If set to False, we will use cuda/tpu/mps/npu device if available."
+            "help": "Whether or not to use cpu. If set to False, we will use cuda or mps device if available."
         },
     )
     use_mps_device: bool = field(
@@ -1544,6 +1550,12 @@ class TrainingArguments:
             "synchronize num_tokens_in_batch for precise loss calculation. Reference: "
             "https://github.com/huggingface/transformers/issues/34242"
         },
+    )
+    path_initial_model_for_weight_conversion: Optional[str] = field(
+        default=None,
+        metadata={
+            "help": "Path to initial model weights for PISSA/OLoRA weight conversion during checkpointing. Used to convert PISSA/OLoRA weights to standard LoRA format."
+        }
     )
 
     def __post_init__(self):
@@ -2550,7 +2562,7 @@ class TrainingArguments:
 
     def to_sanitized_dict(self) -> Dict[str, Any]:
         """
-        Sanitized serialization to use with TensorBoard’s hparams
+        Sanitized serialization to use with TensorBoard's hparams
         """
         d = self.to_dict()
         d = {**d, **{"train_batch_size": self.train_batch_size, "eval_batch_size": self.eval_batch_size}}
